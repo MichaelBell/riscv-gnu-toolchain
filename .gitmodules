@@ -3,9 +3,8 @@
 # #1654).
 [submodule "binutils"]
 	path = binutils
-	url = https://github.com/bminor/binutils-gdb.git
-	branch = binutils-2_45-branch
-	shallow = true
+	url = https://github.com/MichaelBell/tinyQV-binutils.git
+	branch = tinyQV-2_45
 [submodule "gcc"]
 	path = gcc
 	url = https://github.com/gcc-mirror/gcc.git
