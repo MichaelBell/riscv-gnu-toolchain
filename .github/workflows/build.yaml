@@ -1,7 +1,12 @@
 name: Build
 
 # either manually started, or on a schedule
-on: [ push, workflow_dispatch ]
+on:
+  push:
+  workflow_dispatch:
+  release:
+    types: [created]
+
 jobs:
   build:
     # ubuntu
@@ -39,4 +44,15 @@ jobs:
         with:
           name: RiscV32EC
           path: riscv32ec.tar.gz
+
+      - name: Upload release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          asset_path: riscv32ec.tar.gz
+          upload_url: ${{github.event.release.upload_url}}
+          asset_name: riscv32ec-${{github.event.release.tag_name || github.sha}}.tar.gz
+          asset_content_type: application/octet-stream
 
