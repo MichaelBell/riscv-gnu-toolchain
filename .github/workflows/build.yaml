@@ -5,7 +5,7 @@ on:
   push:
   workflow_dispatch:
   release:
-    types: [created, published]
+    types: [created]
 
 jobs:
   build:
@@ -28,7 +28,7 @@ jobs:
 
       - name: build toolchain
         run: |
-          ./configure --prefix=/opt/riscv --with-arch=rv32ec --with-abi=ilp32e
+          ./configure --prefix=/opt/riscv --with-arch=rv32ec_zcb --with-abi=ilp32e
           sudo make -j $(nproc)
 
       - name: recover space
