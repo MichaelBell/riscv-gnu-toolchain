@@ -28,7 +28,7 @@ jobs:
 
       - name: build toolchain
         run: |
-          ./configure --prefix=/opt/riscv --with-arch=rv32ec_zcb --with-abi=ilp32e
+          ./configure --prefix=/opt/tinyQV --with-arch=rv32ec_zcb_zicond --with-abi=ilp32e
           sudo make -j $(nproc)
 
       - name: recover space
@@ -38,11 +38,11 @@ jobs:
           sudo du -hs / 2> /dev/null || true
 
       - name: tarball build
-        run: tar czvf riscv32ec.tar.gz -C /opt/ riscv/
+        run: tar czvf riscv32ec.tar.gz -C /opt/ tinyQV/
 
       - uses: actions/upload-artifact@v4
         with:
-          name: RiscV32EC
+          name: tinyQV-x64.tgz
           path: riscv32ec.tar.gz
 
       - name: Upload release
@@ -56,3 +56,50 @@ jobs:
           asset_name: riscv32ec-${{github.event.release.tag_name || github.sha}}.tar.gz
           asset_content_type: application/octet-stream
 
+  build-arm:
+    # ubuntu
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - name: Remove unneeded frameworks to recover disk space
+        run: |
+          echo "-- Before --"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          echo "-- After --"
+          df -h
+
+      - uses: actions/checkout@v4
+
+      - name: install dependencies
+        run: sudo ./.github/setup-apt.sh
+
+      - name: build toolchain
+        run: |
+          ./configure --prefix=/opt/tinyQV --with-arch=rv32ec_zcb_zicond --with-abi=ilp32e
+          sudo make -j $(nproc)
+
+      - name: recover space
+        run: |
+          sudo du -hs / 2> /dev/null || true
+          sudo rm -rf binutils dejagnu gcc gdb glibc llvm musl newlib pk qemu spike uclibc-ng || true
+          sudo du -hs / 2> /dev/null || true
+
+      - name: tarball build
+        run: tar czvf riscv32ec-arm64.tar.gz -C /opt/ tinyQV/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tinyQV-arm64.tgz
+          path: riscv32ec-arm64.tar.gz
+
+      - name: Upload release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          asset_path: riscv32ec-arm64.tar.gz
+          upload_url: ${{github.event.release.upload_url}}
+          asset_name: riscv32ec-arm64-${{github.event.release.tag_name || github.sha}}.tar.gz
+          asset_content_type: application/octet-stream
