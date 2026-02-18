@@ -1,35 +1,106 @@
 name: Build
 
+# either manually started, or on a schedule
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+  workflow_dispatch:
+  release:
+    types: [created]
 
 jobs:
   build:
-    uses: ./.github/workflows/build-reusable.yaml
-    with:
-      artifact-name: build
+    # ubuntu
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Remove unneeded frameworks to recover disk space
+        run: |
+          echo "-- Before --"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          echo "-- After --"
+          df -h
 
-  test-sim:
-    uses: ./.github/workflows/build-reusable.yaml
-    with:
-      artifact-name: sim
-      os: '["ubuntu-24.04"]'
-      mode: '["newlib"]'
-      target: '["rv64gc-lp64d"]'
-      sim: '["spike"]'
+      - uses: actions/checkout@v4
 
-  build-multilib:
-    if: ${{ false }} # Disable until multilib errors are triaged
-    uses: ./.github/workflows/build-reusable.yaml
-    with:
-      artifact-name: multilib
-      os: '["ubuntu-24.04"]'
-      mode: '["newlib","linux"]'
-      target: '["rv64gc-lp64d"]'
+      - name: install dependencies
+        run: sudo ./.github/setup-apt.sh
+
+      - name: build toolchain
+        run: |
+          ./configure --prefix=/opt/rv4028 --with-arch=rv32i
+          sudo make -j $(nproc)
+
+      - name: recover space
+        run: |
+          sudo du -hs / 2> /dev/null || true
+          sudo rm -rf binutils dejagnu gcc gdb glibc llvm musl newlib pk qemu spike uclibc-ng || true
+          sudo du -hs / 2> /dev/null || true
+
+      - name: tarball build
+        run: tar czvf riscv32i.tar.gz -C /opt/ rv4028/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rv4028-x64.tgz
+          path: riscv32i.tar.gz
+
+      - name: Upload release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          asset_path: riscv32i.tar.gz
+          upload_url: ${{github.event.release.upload_url}}
+          asset_name: riscv32i-${{github.event.release.tag_name || github.sha}}.tar.gz
+          asset_content_type: application/octet-stream
+
+  build-arm:
+    # ubuntu
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Remove unneeded frameworks to recover disk space
+        run: |
+          echo "-- Before --"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          echo "-- After --"
+          df -h
+
+      - uses: actions/checkout@v4
+
+      - name: install dependencies
+        run: sudo ./.github/setup-apt.sh
+
+      - name: build toolchain
+        run: |
+          ./configure --prefix=/opt/rv4028 --with-arch=rv32i
+          sudo make -j $(nproc)
+
+      - name: recover space
+        run: |
+          sudo du -hs / 2> /dev/null || true
+          sudo rm -rf binutils dejagnu gcc gdb glibc llvm musl newlib pk qemu spike uclibc-ng || true
+          sudo du -hs / 2> /dev/null || true
+
+      - name: tarball build
+        run: tar czvf riscv32i.tar.gz -C /opt/ rv4028/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rv4028-arm64.tgz
+          path: riscv32i-arm64.tar.gz
+
+      - name: Upload release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          asset_path: riscv32i-arm64.tar.gz
+          upload_url: ${{github.event.release.upload_url}}
+          asset_name: riscv32i-arm64-${{github.event.release.tag_name || github.sha}}.tar.gz
+          asset_content_type: application/octet-stream
 
