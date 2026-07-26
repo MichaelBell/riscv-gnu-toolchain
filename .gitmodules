@@ -1,7 +1,7 @@
 [submodule "binutils"]
 	path = binutils
-	url = https://sourceware.org/git/binutils-gdb.git
-	branch = binutils-2_46-branch
+	url = https://github.com/MichaelBell/tinyQV-binutils.git
+	branch = tinyQV-2_46
 	shallow = true
 [submodule "gcc"]
 	path = gcc
