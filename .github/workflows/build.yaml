@@ -28,6 +28,7 @@ jobs:
 
       - name: build toolchain
         run: |
+          for module in binutils newlib gcc gdb ; do git submodule update --init --depth 1 $module ; sleep 5 ; done
           ./configure --prefix=/opt/tinyQV --with-arch=rv32ec_zcb_zicond_zilsd --with-abi=ilp32e
           sudo make -j $(nproc)
 
@@ -76,6 +77,7 @@ jobs:
 
       - name: build toolchain
         run: |
+          for module in binutils newlib gcc gdb ; do git submodule update --init --depth 1 $module ; sleep 5 ; done
           ./configure --prefix=/opt/tinyQV --with-arch=rv32ec_zcb_zicond_zilsd --with-abi=ilp32e
           sudo make -j $(nproc)
 
